@@ -2,11 +2,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Examples.EFCore.Complete
 {
-    public sealed class Context : DbContext
+    public sealed class Context : DbContext, IContext
     {
         public Context (DbContextOptions<Context> options)
             : base(options)
         {
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Models.User>().HasQueryFilter(u => u.Visible);
         }
 
         public DbSet<Models.User> Users { get; set; }

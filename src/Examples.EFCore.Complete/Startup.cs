@@ -29,6 +29,7 @@ namespace Examples.EFCore.Complete
                 .UseSqlite("Data Source=context.db")
             );
             services.AddControllers();
+            services.AddScoped<IContext, Context>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
