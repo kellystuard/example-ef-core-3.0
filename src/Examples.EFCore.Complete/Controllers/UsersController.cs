@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-namespace Examples.EFCore.DIY.Controllers
+namespace Examples.EFCore.Complete.Controllers
 {
     // conforms to the following REST specifications: https://restfulapi.net/http-methods/
     [ApiController]
+    //[Route("[controller]")]
     [Route("users")]
     public sealed class UsersController : ControllerBase
     {
@@ -35,6 +36,7 @@ namespace Examples.EFCore.DIY.Controllers
             int realId;
             if (int.TryParse(id, out realId) == false)
                 return StatusCode(400);
+                //return this.ValidationProblem(ModelState);
 
             var users = _context.Users.ToArray();
             var user = users.Where(u => u.Visible && u.Id == realId).FirstOrDefault();
@@ -64,6 +66,8 @@ namespace Examples.EFCore.DIY.Controllers
 
             Response.Headers.Add("Location",  new UriBuilder(Request.Scheme, Request.Host.Host, Request.Host.Port ?? (Request.IsHttps ? 443 : 80), Request.Path + newUser.Id).ToString());
             return StatusCode(201, newUser);
+
+            //return CreatedAtAction("ReadSingle", new { id = user.Id });
         }
 
         [HttpPut("{id}")]
@@ -72,6 +76,7 @@ namespace Examples.EFCore.DIY.Controllers
             int realId;
             if (int.TryParse(id, out realId) == false)
                 return StatusCode(400);
+                //return this.ValidationProblem(ModelState);
 
             if (user.FirstName == null)
                 return StatusCode(400, "firstName cannot be null");
@@ -104,6 +109,7 @@ namespace Examples.EFCore.DIY.Controllers
             int realId;
             if (int.TryParse(id, out realId) == false)
                 return StatusCode(400);
+                //return this.ValidationProblem(ModelState);
 
             var users = _context.Users.ToArray();
             var user = users.Where(u => u.Visible && u.Id == realId).FirstOrDefault();
@@ -115,6 +121,31 @@ namespace Examples.EFCore.DIY.Controllers
             _context.SaveChanges();
 
             return StatusCode(204);
+        }
+
+        [HttpPatch("{id}")]
+        //[Consumes("application/merge-patch+json")]
+        public IActionResult Patch(string id, Models.User user)
+        {
+            int realId;
+            if (int.TryParse(id, out realId) == false)
+                return StatusCode(400);
+                //return this.ValidationProblem(ModelState);
+
+            var users = _context.Users.ToArray();
+            var updateUser = users.Where(u => u.Visible && u.Id == realId).FirstOrDefault();
+            if (updateUser == null)
+                return StatusCode(404);
+
+            if (Request.Form.ContainsKey(nameof(user.FirstName)))
+                updateUser.FirstName = user.FirstName;
+            if (Request.Form.ContainsKey(nameof(user.FirstName)))
+                updateUser.LastName = user.FirstName;
+
+            _context.Users.Update(updateUser);
+            _context.SaveChanges();
+
+            return StatusCode(200, updateUser);
         }
     }
 }
