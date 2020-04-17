@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 namespace Examples.EFCore.Complete
@@ -7,6 +9,6 @@ namespace Examples.EFCore.Complete
         DbSet<Models.User> Users { get; }
         DbSet<Models.Order> Orders { get; }
 
-        int SaveChanges();
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

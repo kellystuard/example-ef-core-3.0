@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,20 +15,23 @@ namespace Examples.EFCore.Complete.Controllers
     public sealed class UsersController : ControllerBase
     {
         private readonly ILogger<UsersController> _logger;
-        private readonly Context _context;
+        private readonly IContext _context;
 
-        public UsersController(ILogger<UsersController> logger, Context context)
+        public UsersController(ILogger<UsersController> logger, IContext context)
         {
             _logger = logger;
             _context = context;
         }
 
         [HttpGet]
-        public async Task<Models.Page<Models.User>> ReadAll(int limit = 10, int offset = 0)
+        public async Task<Models.Page<Models.User>> ReadAll(CancellationToken cancellationToken, int limit = 10, int offset = 0)
         {
             var query = _context.Users;
-            var users = await query.Skip(offset).Take(limit).ToArrayAsync();
-            var totalCount = await query.CountAsync();
+            var users = await query
+                .Skip(offset)
+                .Take(limit)
+                .ToArrayAsync(cancellationToken);
+            var totalCount = await query.CountAsync(cancellationToken);
 
             return new Models.Page<Models.User>
             {
@@ -39,9 +43,9 @@ namespace Examples.EFCore.Complete.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Models.User>> ReadSingle(int id)
+        public async Task<ActionResult<Models.User>> ReadSingle(CancellationToken cancellationToken, int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users.FindAsync(id, cancellationToken);
             if (user == null)
                 return NotFound();
 
@@ -49,7 +53,7 @@ namespace Examples.EFCore.Complete.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Models.User>> Create(Models.User user)
+        public async Task<ActionResult<Models.User>> Create(CancellationToken cancellationToken, Models.User user)
         {
             var newUser = new Models.User()
             {
@@ -58,22 +62,23 @@ namespace Examples.EFCore.Complete.Controllers
             };
             _context.Users.Add(newUser);
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return CreatedAtAction(nameof(ReadSingle), new { id = newUser.Id }, newUser);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<Models.User>> CreateOrUpdate(int id, Models.User user)
+        public async Task<ActionResult<Models.User>> CreateOrUpdate(CancellationToken cancellationToken, int id, Models.User user)
         {
-            var updateUser = await _context.Users.FindAsync(id);
+            var updateUser = await _context.Users.FindAsync(id, cancellationToken);
             var newUser = (updateUser == null);
-            updateUser ??= _context.Users.IgnoreQueryFilters().Add(new Models.User()).Entity;
+            updateUser ??= _context.Users.Add(new Models.User()).Entity;
 
             updateUser.FirstName = user.FirstName;
             updateUser.LastName = user.LastName;
+            updateUser.Visible = true;
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             if (newUser)
                 return CreatedAtAction(nameof(ReadSingle), new { id = updateUser.Id }, updateUser);
@@ -82,15 +87,15 @@ namespace Examples.EFCore.Complete.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(CancellationToken cancellationToken, int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users.FindAsync(id, cancellationToken);
             if (user == null)
                 return NotFound();
 
             _context.Users.Remove(user);
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return NoContent();
         }
