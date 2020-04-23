@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Examples.EFCore.DIY
+namespace Examples.EFCore.Vendor
 {
     public sealed class Program
     {
@@ -55,6 +55,13 @@ namespace Examples.EFCore.DIY
                             new Models.User() { FirstName = "Brett",       LastName = "Buckley",  },
                             new Models.User() { FirstName = "Katya",       LastName = "Kazanova", },
                             new Models.User() { FirstName = "Gustavo",     LastName = "Calderon", }
+                        );
+
+                    if (context.Orders.Any() == false)
+                        context.Orders.AddRange(
+                            new Models.Order() { CustomerFirstName = "Sterling",    CustomerLastName = "Archer" }
+                                .AddLine(new Models.OrderLine() { SKU = "1234", Description = "1234 - Description" }),
+                            new Models.Order() { CustomerFirstName = "Sterling",    CustomerLastName = "Archer",   }
                         );
 
                     context.SaveChanges();

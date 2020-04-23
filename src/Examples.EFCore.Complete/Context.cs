@@ -2,19 +2,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Examples.EFCore.Complete
 {
-    public sealed class Context : DbContext, IContext
-    {
-        public Context (DbContextOptions<Context> options)
-            : base(options)
-        {
-        }
+	/// <inheritdoc/>
+	public sealed class Context : DbContext, IContext
+	{
+		/// <inheritdoc/>
+		public Context(DbContextOptions<Context> options)
+			: base(options)
+		{
+		}
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Models.User>().HasQueryFilter(u => u.Visible);
-        }
+		/// <inheritdoc/>
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			modelBuilder.Entity<Models.User>().HasQueryFilter(u => u.Visible);
+		}
 
-        public DbSet<Models.User> Users { get; set; }
-        public DbSet<Models.Order> Orders { get; set; }
-    }
+		/// <summary>
+		/// Deferred full list of users, from the database.
+		/// </summary>
+		public DbSet<Models.User> Users { get; set; } = null!;
+	}
 }

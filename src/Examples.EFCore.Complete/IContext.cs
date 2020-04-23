@@ -4,11 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Examples.EFCore.Complete
 {
-    public interface IContext
-    {
-        DbSet<Models.User> Users { get; }
-        DbSet<Models.Order> Orders { get; }
+	/// <inheritdoc cref="Context"/>
+	public interface IContext
+	{
+		/// <inheritdoc cref="Context.Users"/>
+		DbSet<Models.User> Users { get; }
 
-        Task<int> SaveChangesAsync(CancellationToken cancellationToken);
-    }
+		/// <inheritdoc cref="DbContext.SaveChangesAsync(CancellationToken)"/>
+		Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+	}
 }

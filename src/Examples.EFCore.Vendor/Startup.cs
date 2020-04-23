@@ -11,9 +11,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 
-namespace Examples.EFCore.DIY
+namespace Examples.EFCore.Vendor
 {
     public sealed class Startup
     {
@@ -27,14 +26,10 @@ namespace Examples.EFCore.DIY
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<Context>(options => options
-                .UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=EFProviders.InMemory;Trusted_Connection=True;ConnectRetryCount=0")
+                .UseSqlite("Data Source=context.db")
             );
             services.AddControllers();
-
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-            });
+            services.AddScoped<IContext, Context>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -45,12 +40,6 @@ namespace Examples.EFCore.DIY
             }
 
             app.UseHttpsRedirection();
-
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", typeof(Startup).Namespace);
-            });
 
             app.UseRouting();
 

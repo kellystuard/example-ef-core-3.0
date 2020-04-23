@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Examples.EFCore.DIY.Models
+namespace Examples.EFCore.Vendor.Models
 {
     public sealed class User
     {

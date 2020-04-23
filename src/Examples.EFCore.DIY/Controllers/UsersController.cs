@@ -12,7 +12,7 @@ namespace Examples.EFCore.DIY.Controllers
     [Route("users")]
     public sealed class UsersController : ControllerBase
     {
-        private readonly ILogger<UsersController> _logger;
+        private readonly ILogger _logger;
         private readonly Context _context;
 
         public UsersController(ILogger<UsersController> logger, Context context)
@@ -24,14 +24,17 @@ namespace Examples.EFCore.DIY.Controllers
         [HttpGet]
         public IActionResult ReadAll()
         {
+            _logger.LogInformation("Getting all users");
             var users = _context.Users.Where(u => u.Visible).ToArray();
 
+            _logger.LogInformation("Returning all users");
             return StatusCode(200, users);
         }
 
         [HttpGet("{id}")]
         public IActionResult ReadSingle(string id)
         {
+            _logger.LogInformation("Getting user {Id}", id);
             int realId;
             if (int.TryParse(id, out realId) == false)
                 return StatusCode(400);
@@ -41,12 +44,14 @@ namespace Examples.EFCore.DIY.Controllers
             if (user == null)
                 return StatusCode(404);
 
+            _logger.LogInformation("Returning user {Id}", id);
             return StatusCode(200, user);
         }
 
         [HttpPost]
         public IActionResult Create(Models.User user)
         {
+            _logger.LogInformation("Creating user {Id}", user.Id);
             if (user.FirstName == null)
                 return StatusCode(400, "firstName cannot be null");
             if (user.LastName == null)
@@ -63,12 +68,14 @@ namespace Examples.EFCore.DIY.Controllers
             _context.SaveChanges();
 
             Response.Headers.Add("Location",  new UriBuilder(Request.Scheme, Request.Host.Host, Request.Host.Port ?? (Request.IsHttps ? 443 : 80), Request.Path + newUser.Id).ToString());
+            _logger.LogInformation("Created user {Id}", user.Id);
             return StatusCode(201, newUser);
         }
 
         [HttpPut("{id}")]
         public IActionResult CreateOrUpdate(string id, Models.User user)
         {
+            _logger.LogInformation("Creating or updating user {Id}", user.Id);
             int realId;
             if (int.TryParse(id, out realId) == false)
                 return StatusCode(400);
@@ -95,12 +102,14 @@ namespace Examples.EFCore.DIY.Controllers
 
             _context.SaveChanges();
 
+            _logger.LogInformation((newUser ? "Created" : "Updated") + " user {Id}", user.Id);
             return StatusCode(newUser ? 201 : 200, updateUser);
         }
 
         [HttpDelete("{id}")]
         public IActionResult Delete(string id)
         {
+            _logger.LogInformation("Deleting user {Id}", id);
             int realId;
             if (int.TryParse(id, out realId) == false)
                 return StatusCode(400);
@@ -114,6 +123,7 @@ namespace Examples.EFCore.DIY.Controllers
 
             _context.SaveChanges();
 
+            _logger.LogInformation("Deleted user {Id}", id);
             return StatusCode(204);
         }
     }

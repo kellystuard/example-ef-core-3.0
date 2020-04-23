@@ -1,4 +1,4 @@
-namespace Examples.EFCore.Complete.Models
+namespace Examples.EFCore.Vendor.Models
 {
     public sealed class OrderLine
     {

@@ -11,67 +11,66 @@ using Microsoft.Extensions.Logging;
 
 namespace Examples.EFCore.Complete
 {
-    public sealed class Program
-    {
-        public static void Main(string[] args)
-        {
-            var host = CreateHostBuilder(args).Build();
-            CreateAndPopulateDbIfNotExists(host);
-            host.Run();
-        }
+	/// <summary>
+	/// Starting class of the application.
+	/// </summary>
+	public sealed class Program
+	{
+		/// <summary>
+		/// Starting method of the application.
+		/// </summary>
+		/// <param name="args">Command line arguments passed to the application.</param>
+		public static void Main(string[] args)
+		{
+			System.Diagnostics.Activity.DefaultIdFormat = System.Diagnostics.ActivityIdFormat.W3C;
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+			var host = CreateHostBuilder(args).Build();
+			CreateAndPopulateDbIfNotExists(host);
+			host.Run();
+		}
 
-        private static void CreateAndPopulateDbIfNotExists(IHost host)
-        {
-            using (var scope = host.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
+		/// <summary>
+		/// Creates the web-host that will run the service endpoints.
+		/// </summary>
+		/// <param name="args">Command line arguments passed to the application.</param>
+		/// <returns></returns>
+		public static IHostBuilder CreateHostBuilder(string[] args) =>
+			Host.CreateDefaultBuilder(args)
+				.ConfigureWebHostDefaults(webBuilder =>
+				{
+					webBuilder.UseStartup<Startup>();
+				});
 
-                try
-                {
-                    var context = services.GetRequiredService<Context>();
-                    context.Database.Migrate();
+		private static void CreateAndPopulateDbIfNotExists(IHost host)
+		{
+			using (var scope = host.Services.CreateScope())
+			{
+				var services = scope.ServiceProvider;
 
-                    if (context.Users.Any() == false)
-                        context.Users.AddRange(
-                            new Models.User() { FirstName = "Sterling",    LastName = "Archer",   },
-                            new Models.User() { FirstName = "Cheryl",      LastName = "Tunt",     },
-                            new Models.User() { FirstName = "Pam",         LastName = "Poovey",   },
-                            new Models.User() { FirstName = "Cyril",       LastName = "Figgis",   },
-                            new Models.User() { FirstName = "Lana",        LastName = "Kane",     },
-                            new Models.User() { FirstName = "Malory",      LastName = "Archer",   },
-                            new Models.User() { FirstName = "Ray",         LastName = "Gillette", },
-                            new Models.User() { FirstName = "Doctor",      LastName = "Kreiger",  },
-                            new Models.User() { FirstName = "Barry",       LastName = "Dillon",   },
-                            new Models.User() { FirstName = "Other Barry", LastName = "Dillon",   },
-                            new Models.User() { FirstName = "Len",         LastName = "Drexler",  },
-                            new Models.User() { FirstName = "Ron",         LastName = "Cadillac", },
-                            new Models.User() { FirstName = "Brett",       LastName = "Buckley",  },
-                            new Models.User() { FirstName = "Katya",       LastName = "Kazanova", },
-                            new Models.User() { FirstName = "Gustavo",     LastName = "Calderon", }
-                        );
+				var context = services.GetRequiredService<Context>();
+				context.Database.Migrate();
 
-                    if (context.Orders.Any() == false)
-                        context.Orders.AddRange(
-                            new Models.Order() { CustomerFirstName = "Sterling",    CustomerLastName = "Archer" }
-                                .AddLine(new Models.OrderLine() { SKU = "1234", Description = "1234 - Description" }),
-                            new Models.Order() { CustomerFirstName = "Sterling",    CustomerLastName = "Archer",   }
-                        );
+				if (context.Users.Any() == false)
+					context.Users.AddRange(
+						new Models.User() { FirstName = "Sterling", LastName = "Archer", },
+						new Models.User() { FirstName = "Cheryl", LastName = "Tunt", },
+						new Models.User() { FirstName = "Pam", LastName = "Poovey", },
+						new Models.User() { FirstName = "Cyril", LastName = "Figgis", },
+						new Models.User() { FirstName = "Lana", LastName = "Kane", },
+						new Models.User() { FirstName = "Malory", LastName = "Archer", },
+						new Models.User() { FirstName = "Ray", LastName = "Gillette", },
+						new Models.User() { FirstName = "Doctor", LastName = "Kreiger", },
+						new Models.User() { FirstName = "Barry", LastName = "Dillon", },
+						new Models.User() { FirstName = "Other Barry", LastName = "Dillon", },
+						new Models.User() { FirstName = "Len", LastName = "Drexler", },
+						new Models.User() { FirstName = "Ron", LastName = "Cadillac", },
+						new Models.User() { FirstName = "Brett", LastName = "Buckley", },
+						new Models.User() { FirstName = "Katya", LastName = "Kazanova", },
+						new Models.User() { FirstName = "Gustavo", LastName = "Calderon", }
+					);
 
-                    context.SaveChanges();
-                }
-                catch (Exception ex)
-                {
-                    var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "An error occurred creating the DB.");
-                }
-            }
-        }
-    }
+				context.SaveChanges();
+			}
+		}
+	}
 }

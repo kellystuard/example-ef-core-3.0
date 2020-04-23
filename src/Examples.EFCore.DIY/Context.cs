@@ -10,6 +10,5 @@ namespace Examples.EFCore.DIY
         }
 
         public DbSet<Models.User> Users { get; set; }
-        public DbSet<Models.Order> Orders { get; set; }
     }
 }

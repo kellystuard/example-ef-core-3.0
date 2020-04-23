@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Examples.EFCore.DIY.Migrations
+namespace Examples.EFCore.Vendor.Migrations
 {
     public partial class Addingvisibleproperty : Migration
     {
