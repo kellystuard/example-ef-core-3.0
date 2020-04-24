@@ -38,9 +38,11 @@ namespace Examples.EFCore.Complete
 		{
 			services.AddDbContext<Context>(options => options
 				.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=EFProviders.InMemory;Trusted_Connection=True;ConnectRetryCount=0")
+				.EnableSensitiveDataLogging(true)
 			);
 			services.AddControllers();
 			services.AddScoped<IContext, Context>();
+			services.AddTransient(typeof(Lazy<>), typeof(ServiceLazy<>));
 			services.AddSwaggerGen(c =>
 			{
 				c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
@@ -80,6 +82,14 @@ namespace Examples.EFCore.Complete
 			{
 				endpoints.MapControllers();
 			});
+		}
+
+		internal sealed class ServiceLazy<T> : Lazy<T> where T : class
+		{
+			public ServiceLazy(IServiceProvider provider)
+				: base(() => provider.GetRequiredService<T>())
+			{
+			}
 		}
 	}
 }

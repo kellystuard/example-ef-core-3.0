@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Transactions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,14 +23,14 @@ namespace Examples.EFCore.Complete.Controllers
 	public sealed class UsersController : ControllerBase
 	{
 		private readonly ILogger _logger;
-		private readonly IContext _context;
+		private readonly Context _context;
 
 		/// <summary>
 		/// Creates a new UsersController.
 		/// </summary>
 		/// <param name="logger">A generic interface for logging where the category name is derived from the type name.</param>
 		/// <param name="context">Represents a session with the database and can be used to query and save instances of your entities.</param>
-		public UsersController(ILogger<UsersController> logger, IContext context)
+		public UsersController(ILogger<UsersController> logger, Context context)
 		{
 			_logger = logger;
 			_context = context;
@@ -42,7 +43,7 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <param name="limit">Maximum number of users to return.</param>
 		/// <param name="offset">Zero-based offset of the first user to return.</param>
 		/// <returns>Page of users.</returns>
-		[HttpGet]
+		[HttpGet, Transactional(IsolationLevel.ReadCommitted)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		public async Task<Models.Page<Models.User>> ReadAll(CancellationToken cancellationToken, [Range(0, int.MaxValue)] int limit = 10, [Range(0, int.MaxValue)] int offset = 0)
@@ -64,7 +65,7 @@ namespace Examples.EFCore.Complete.Controllers
 		/// </summary>
 		/// <param name="id">Resource identifier of the user.</param>
 		/// <returns>Single user.</returns>
-		[HttpGet("{id}")]
+		[HttpGet("{id}"), Transactional(IsolationLevel.ReadCommitted)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -83,7 +84,7 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is cancelled.</param>
 		/// <param name="user">Data to be used to create the new user.</param>
 		/// <returns>Newly-created user. Location header will contain URL to the new-ly created user.</returns>
-		[HttpPost]
+		[HttpPost, Transactional(IsolationLevel.RepeatableRead)]
 		[ProducesResponseType(StatusCodes.Status201Created)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		public async Task<ActionResult<Models.User>> Create(CancellationToken cancellationToken, Models.User user)
@@ -107,7 +108,7 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <param name="id">Resource identifier of the user.</param>
 		/// <param name="user">Data to be used to create the new user.</param>
 		/// <returns>New or overwritten user. If newly-created user, location header will contain URL.</returns>
-		[HttpPut("{id}")]
+		[HttpPut("{id}"), Transactional(IsolationLevel.RepeatableRead)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status201Created)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -137,7 +138,7 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is cancelled.</param>
 		/// <param name="id">Resource identifier of the user.</param>
 		/// <returns>Empty result.</returns>
-		[HttpDelete("{id}")]
+		[HttpDelete("{id}"), Transactional(IsolationLevel.RepeatableRead)]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		public async Task<IActionResult> Delete(CancellationToken cancellationToken, int id)
