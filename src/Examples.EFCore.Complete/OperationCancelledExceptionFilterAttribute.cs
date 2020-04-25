@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Examples.EFCore.Complete
@@ -16,23 +17,27 @@ namespace Examples.EFCore.Complete
 	/// </remarks>
 	public sealed class OperationCancelledExceptionFilterAttribute : ExceptionFilterAttribute
 	{
-		private readonly ILogger _logger;
+		private readonly int _statusCode;
 
 		/// <summary>
 		/// Creates an instance of the class.
 		/// </summary>
-		/// <param name="logger">Represents a type used to perform logging.</param>
-		public OperationCancelledExceptionFilterAttribute(ILogger<OperationCancelledExceptionFilterAttribute> logger)
+		/// <param name="statusCode">HTTP status code to return.</param>
+		public OperationCancelledExceptionFilterAttribute(int statusCode = 499)
 		{
-			_logger = logger;
+			_statusCode = statusCode;
 		}
 
 		/// <inheritdoc/>
 		public override void OnException(ExceptionContext context)
 		{
+			if (context == null)
+				throw new ArgumentNullException(nameof(context));
+
 			if (context?.Exception is OperationCanceledException)
 			{
-				_logger.LogInformation("User canceled request.");
+				var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<OperationCancelledExceptionFilterAttribute>>();
+				logger.LogInformation("User canceled request.");
 				context.ExceptionHandled = true;
 				context.Result = new StatusCodeResult(499); // Client Closed Request
 			}

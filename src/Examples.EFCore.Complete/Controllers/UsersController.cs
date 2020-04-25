@@ -55,7 +55,7 @@ namespace Examples.EFCore.Complete.Controllers
 					.Take(limit)
 					.ToArrayAsync(cancellationToken);
 			var totalCount = await query.CountAsync(cancellationToken);
-			await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+
 			return new Models.Page<Models.User>(users, totalCount, limit, offset);
 		}
 
