@@ -37,10 +37,13 @@ namespace Examples.EFCore.Complete
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddDbContext<Context>(options => options
-				.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=EFProviders.InMemory;Trusted_Connection=True;ConnectRetryCount=0")
+				.UseSqlServer(Configuration.GetConnectionString("Database"))
 				.EnableSensitiveDataLogging(true)
 			);
-			services.AddControllers();
+			services.AddControllers(configure =>
+			{
+				configure.Filters.Add<OperationCancelledExceptionFilterAttribute>();
+			});
 			services.AddScoped<IContext, Context>();
 			services.AddTransient(typeof(Lazy<>), typeof(ServiceLazy<>));
 			services.AddSwaggerGen(c =>
@@ -54,11 +57,13 @@ namespace Examples.EFCore.Complete
 			});
 		}
 
+
 		/// <summary>
 		/// Configures the application, during application startup.
 		/// </summary>
 		/// <param name="app">Provides the mechanisms to configure an application's request pipeline.</param>
 		/// <param name="env">Provides information about the web hosting environment an application is running in.</param>
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Will eventually use configuration keys.")]
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 		{
 			if (env.IsDevelopment())
@@ -84,6 +89,7 @@ namespace Examples.EFCore.Complete
 			});
 		}
 
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812", Justification = "Used in DI registrations to allow for lazy resolving of dependencies.")]
 		internal sealed class ServiceLazy<T> : Lazy<T> where T : class
 		{
 			public ServiceLazy(IServiceProvider provider)

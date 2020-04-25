@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
@@ -28,7 +27,7 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <summary>
 		/// Creates a new UsersController.
 		/// </summary>
-		/// <param name="logger">A generic interface for logging where the category name is derived from the type name.</param>
+		/// <param name="logger">Represents a type used to perform logging.</param>
 		/// <param name="context">Represents a session with the database and can be used to query and save instances of your entities.</param>
 		public UsersController(ILogger<UsersController> logger, Context context)
 		{
@@ -39,7 +38,7 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <summary>
 		/// Reads a page of users, starting at <paramref name="offset"/> and returning a maximum count of <paramref name="limit"/>.
 		/// </summary>
-		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is cancelled.</param>
+		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is canceled.</param>
 		/// <param name="limit">Maximum number of users to return.</param>
 		/// <param name="offset">Zero-based offset of the first user to return.</param>
 		/// <returns>Page of users.</returns>
@@ -56,7 +55,7 @@ namespace Examples.EFCore.Complete.Controllers
 					.Take(limit)
 					.ToArrayAsync(cancellationToken);
 			var totalCount = await query.CountAsync(cancellationToken);
-
+			await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
 			return new Models.Page<Models.User>(users, totalCount, limit, offset);
 		}
 
@@ -81,14 +80,17 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <summary>
 		/// Creates a new user and adds it to the list of users.
 		/// </summary>
-		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is cancelled.</param>
 		/// <param name="user">Data to be used to create the new user.</param>
-		/// <returns>Newly-created user. Location header will contain URL to the new-ly created user.</returns>
+		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is canceled.</param>
+		/// <returns>Newly-created user. Location header will contain URL to the newly-created user.</returns>
 		[HttpPost, Transactional(IsolationLevel.RepeatableRead)]
 		[ProducesResponseType(StatusCodes.Status201Created)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<Models.User>> Create(CancellationToken cancellationToken, Models.User user)
+		public async Task<ActionResult<Models.User>> Create(Models.User user, CancellationToken cancellationToken)
 		{
+			if (user == null)
+				throw new ArgumentNullException(nameof(user));
+
 			var newUser = new Models.User()
 			{
 				FirstName = user.FirstName,
@@ -104,16 +106,19 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <summary>
 		/// Creates a new user at the specified location or overwrites the existing user at the specified location.
 		/// </summary>
-		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is cancelled.</param>
 		/// <param name="id">Resource identifier of the user.</param>
 		/// <param name="user">Data to be used to create the new user.</param>
+		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is canceled.</param>
 		/// <returns>New or overwritten user. If newly-created user, location header will contain URL.</returns>
 		[HttpPut("{id}"), Transactional(IsolationLevel.RepeatableRead)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status201Created)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<Models.User>> CreateOrUpdate(CancellationToken cancellationToken, int id, Models.User user)
+		public async Task<ActionResult<Models.User>> CreateOrUpdate(int id, Models.User user, CancellationToken cancellationToken)
 		{
+			if (user == null)
+				throw new ArgumentNullException(nameof(user));
+
 			var updateUser = await _context.Users.FindAsync(id);
 			var newUser = (updateUser == null);
 			_logger.LogInformation("User will be {Action}", newUser ? "created" : "updated");
@@ -135,13 +140,13 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <summary>
 		/// Deletes the user at the specified location.
 		/// </summary>
-		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is cancelled.</param>
 		/// <param name="id">Resource identifier of the user.</param>
+		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is canceled.</param>
 		/// <returns>Empty result.</returns>
 		[HttpDelete("{id}"), Transactional(IsolationLevel.RepeatableRead)]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> Delete(CancellationToken cancellationToken, int id)
+		public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
 		{
 			var user = await _context.Users.FindAsync(id);
 			if (user == null)
