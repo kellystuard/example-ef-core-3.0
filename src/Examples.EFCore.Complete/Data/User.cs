@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Examples.EFCore.Complete.Data
+﻿namespace Examples.EFCore.Complete.Data
 {
 	/// <summary>
 	/// User in the database.
