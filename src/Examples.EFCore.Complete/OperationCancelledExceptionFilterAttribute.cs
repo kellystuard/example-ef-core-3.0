@@ -39,7 +39,7 @@ namespace Examples.EFCore.Complete
 				var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<OperationCancelledExceptionFilterAttribute>>();
 				logger.LogInformation("User canceled request.");
 				context.ExceptionHandled = true;
-				context.Result = new StatusCodeResult(499); // Client Closed Request
+				context.Result = new StatusCodeResult(_statusCode); // Client Closed Request
 			}
 		}
 	}

@@ -1,9 +1,10 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,41 +23,65 @@ namespace Examples.EFCore.Complete.Controllers
 	public sealed class UsersController : ControllerBase
 	{
 		private readonly ILogger _logger;
+		private readonly IMapper _mapper;
 		private readonly Context _context;
 
 		/// <summary>
 		/// Creates a new UsersController.
 		/// </summary>
 		/// <param name="logger">Represents a type used to perform logging.</param>
+		/// <param name="mapper">Represents a types used to copy property values from one object type to another.</param>
 		/// <param name="context">Represents a session with the database and can be used to query and save instances of your entities.</param>
-		public UsersController(ILogger<UsersController> logger, Context context)
+		public UsersController(ILogger<UsersController> logger, IMapper mapper, Context context)
 		{
 			_logger = logger;
+			_mapper = mapper;
 			_context = context;
 		}
 
 		/// <summary>
-		/// Reads a page of users, starting at <paramref name="offset"/> and returning a maximum count of <paramref name="limit"/>.
+		/// Reads a paged list of users.
 		/// </summary>
+		/// <param name="page">Parameters passed to control paging of the results.</param>
 		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is canceled.</param>
-		/// <param name="limit">Maximum number of users to return.</param>
-		/// <param name="offset">Zero-based offset of the first user to return.</param>
+		/// <param name="orderBy">Controls the sort-order for users.</param>
+		/// <param name="firstName">Filters users to those that starts with this first name.</param>
+		/// <param name="lastName">Filters users to those that starts with this last name.</param>
 		/// <returns>Page of users.</returns>
 		[HttpGet, Transactional(IsolationLevel.ReadCommitted)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		public async Task<Models.Page<Models.User>> ReadAll(CancellationToken cancellationToken, [Range(0, int.MaxValue)] int limit = 10, [Range(0, int.MaxValue)] int offset = 0)
+		public async Task<Models.Page<Models.User>> ReadAll([FromQuery]Models.PageQuery page, CancellationToken cancellationToken,
+			Models.User.Sort orderBy = Models.User.Sort.Default, string? firstName = null, string? lastName = null)
 		{
-			var query = _context.Users;
-			var users = limit == 0 ?
+			page ??= new Models.PageQuery();
+
+			var query = _context.Users.AsNoTracking();
+
+			query = orderBy switch
+			{
+				Models.User.Sort.Default => query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName),
+				Models.User.Sort.Id => query.OrderBy(u => u.Id),
+				Models.User.Sort.FirstName => query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
+				Models.User.Sort.LastName => query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName),
+				_ => throw new ArgumentOutOfRangeException(nameof(orderBy), orderBy, null),
+			};
+
+			if (firstName != null)
+				query = query.Where(u => u.FirstName.StartsWith(firstName));
+			if (lastName != null)
+				query = query.Where(u => u.LastName.StartsWith(lastName));
+
+			var users = page.Limit == 0 ?
 				Enumerable.Empty<Models.User>() :
 				await query
-					.Skip(offset)
-					.Take(limit)
+					.Skip(page.Offset)
+					.Take(page.Limit)
+					.ProjectTo<Models.User>(_mapper.ConfigurationProvider)
 					.ToArrayAsync(cancellationToken);
 			var totalCount = await query.CountAsync(cancellationToken);
 
-			return new Models.Page<Models.User>(users, totalCount, limit, offset);
+			return new Models.Page<Models.User>(users, totalCount, page.Limit, page.Offset);
 		}
 
 		/// <summary>
@@ -74,7 +99,7 @@ namespace Examples.EFCore.Complete.Controllers
 			if (user == null)
 				return NotFound();
 
-			return user;
+			return _mapper.Map<Models.User>(user);
 		}
 
 		/// <summary>
@@ -86,55 +111,47 @@ namespace Examples.EFCore.Complete.Controllers
 		[HttpPost, Transactional(IsolationLevel.RepeatableRead)]
 		[ProducesResponseType(StatusCodes.Status201Created)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<Models.User>> Create(Models.User user, CancellationToken cancellationToken)
+		public async Task<ActionResult<Models.User>> Create(Models.UserEdit user, CancellationToken cancellationToken)
 		{
 			if (user == null)
 				throw new ArgumentNullException(nameof(user));
 
-			var newUser = new Models.User()
-			{
-				FirstName = user.FirstName,
-				LastName = user.LastName,
-			};
+			var newUser = _mapper.Map<Data.User>(user);
 			_context.Users.Add(newUser);
 
 			await _context.SaveChangesAsync(cancellationToken);
+			var savedUser = _mapper.Map<Models.User>(newUser);
 
-			return CreatedAtAction(nameof(ReadSingle), new { id = newUser.Id }, newUser);
+			return CreatedAtAction(nameof(ReadSingle), new { id = newUser.Id }, savedUser);
 		}
 
 		/// <summary>
-		/// Creates a new user at the specified location or overwrites the existing user at the specified location.
+		/// Overwrites the existing user at the specified location.
 		/// </summary>
 		/// <param name="id">Resource identifier of the user.</param>
-		/// <param name="user">Data to be used to create the new user.</param>
+		/// <param name="user">Data to be used to update the existing user.</param>
 		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is canceled.</param>
 		/// <returns>New or overwritten user. If newly-created user, location header will contain URL.</returns>
 		[HttpPut("{id}"), Transactional(IsolationLevel.RepeatableRead)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
-		[ProducesResponseType(StatusCodes.Status201Created)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<Models.User>> CreateOrUpdate(int id, Models.User user, CancellationToken cancellationToken)
+		public async Task<ActionResult<Models.User>> Update(int id, Models.UserEdit user, CancellationToken cancellationToken)
 		{
 			if (user == null)
 				throw new ArgumentNullException(nameof(user));
 
 			var updateUser = await _context.Users.FindAsync(id);
-			var newUser = (updateUser == null);
-			_logger.LogInformation("User will be {Action}", newUser ? "created" : "updated");
-
-			updateUser ??= _context.Users.Add(new Models.User()).Entity;
-
-			updateUser.FirstName = user.FirstName;
-			updateUser.LastName = user.LastName;
-			updateUser.Visible = true;
+			if (updateUser == null)
+			{
+				ModelState.AddModelError(string.Empty, "Unable to create users with PUT.");
+				return ValidationProblem(ModelState);
+			}
+			_mapper.Map(user, updateUser);
 
 			await _context.SaveChangesAsync(cancellationToken);
+			var savedUser = _mapper.Map<Models.User>(updateUser);
 
-			if (newUser)
-				return CreatedAtAction(nameof(ReadSingle), new { id = updateUser.Id }, updateUser);
-
-			return updateUser;
+			return savedUser;
 		}
 
 		/// <summary>

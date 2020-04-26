@@ -18,7 +18,7 @@ namespace Examples.EFCore.Complete.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-            modelBuilder.Entity("Examples.EFCore.Complete.Models.User", b =>
+            modelBuilder.Entity("Examples.EFCore.Complete.Data.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()

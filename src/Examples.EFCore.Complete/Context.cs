@@ -18,12 +18,12 @@ namespace Examples.EFCore.Complete
 			if (modelBuilder == null)
 				throw new ArgumentNullException(nameof(modelBuilder));
 
-			modelBuilder.Entity<Models.User>().HasQueryFilter(u => u.Visible);
+			modelBuilder.Entity<Data.User>().HasQueryFilter(u => u.Visible);
 		}
 
 		/// <summary>
 		/// Deferred full list of users, from the database.
 		/// </summary>
-		public DbSet<Models.User> Users { get; set; } = null!;
+		public DbSet<Data.User> Users { get; set; } = null!;
 	}
 }

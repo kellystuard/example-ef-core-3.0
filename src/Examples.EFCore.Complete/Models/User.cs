@@ -1,24 +1,34 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace Examples.EFCore.Complete.Models
 {
 	/// <summary>
-	/// User in the database.
+	/// User in the API.
 	/// </summary>
 	public sealed class User
 	{
-		/// <summary>User's database identifier.</summary>
+		/// <summary>User's API identifier.</summary>
 		public int Id { get; set; }
 		/// <summary>User's first name.</summary>
-		[Required, Display(Name = "First Name")]
-		public string? FirstName { get; set; }
+		[Required, Display(ShortName = "firstName", Name = "First Name")]
+		public string FirstName { get; set; } = null!;
 		/// <summary>User's last name.</summary>
-		[Required, Display(Name = "Last Name")]
-		public string? LastName { get; set; }
-		/// <summary>If the user should be shown in the results.</summary>
-		/// <remarks>Users that are not visible should never be returned out of the service.</remarks>
-		[JsonIgnore]
-		public bool Visible { get; set; } = true;
+		[Required, Display(ShortName = "lastName", Name = "Last Name")]
+		public string LastName { get; set; } = null!;
+
+		/// <summary>
+		/// Controls the sort-order for users.
+		/// </summary>
+		public enum Sort
+		{
+			/// <summary>Sorts by last name then first name.</summary>
+			Default = 0,
+			/// <summary>Sorts by database identifier.</summary>
+			Id,
+			/// <summary>Sorts by first name then last name.</summary>
+			FirstName,
+			/// <summary>Sorts by last name then first name.</summary>
+			LastName,
+		}
 	}
 }

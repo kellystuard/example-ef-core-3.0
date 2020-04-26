@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text.Json.Serialization;
+using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -20,15 +22,17 @@ namespace Examples.EFCore.Complete
 		/// Creates a new instance with a specified configuration.
 		/// </summary>
 		/// <param name="configuration">Represents a set of key/value application configuration properties.</param>
-		public Startup(IConfiguration configuration)
+		/// <param name="environment">Provides information about the web hosting environment an application is running in.</param>
+		public Startup(IConfiguration configuration, IWebHostEnvironment environment)
 		{
 			Configuration = configuration;
+			Environment = environment;
 		}
 
-		/// <summary>
-		/// Represents a set of key/value application configuration properties.
-		/// </summary>
+		/// <summary>Represents a set of key/value application configuration properties.</summary>
 		public IConfiguration Configuration { get; }
+		/// <summary>Provides information about the web hosting environment an application is running in.</summary>
+		public IWebHostEnvironment Environment { get; }
 
 		/// <summary>
 		/// Configures the services, during the application startup.
@@ -38,23 +42,29 @@ namespace Examples.EFCore.Complete
 		{
 			services.AddDbContext<Context>(options => options
 				.UseSqlServer(Configuration.GetConnectionString("Database"))
-				.EnableSensitiveDataLogging(true)
+				.EnableSensitiveDataLogging(Environment.IsDevelopment())
 			);
 			services.AddControllers(configure =>
 			{
 				configure.Filters.Add<OperationCancelledExceptionFilterAttribute>();
-			});
+			})
+				.AddJsonOptions(options =>
+				{
+					options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+				});
+
 			services.AddScoped<IContext, Context>();
 			services.AddTransient(typeof(Lazy<>), typeof(ServiceLazy<>));
 			services.AddSwaggerGen(c =>
 			{
-				c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+				c.SwaggerDoc("v1", new OpenApiInfo { Title = "My Awesome User API", Version = "v1" });
 
 				// Set the comments path for the Swagger JSON and UI.
 				var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
 				var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
 				c.IncludeXmlComments(xmlPath);
 			});
+			services.AddAutoMapper(typeof(Startup));
 		}
 
 
@@ -62,14 +72,10 @@ namespace Examples.EFCore.Complete
 		/// Configures the application, during application startup.
 		/// </summary>
 		/// <param name="app">Provides the mechanisms to configure an application's request pipeline.</param>
-		/// <param name="env">Provides information about the web hosting environment an application is running in.</param>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Will eventually use configuration keys.")]
-		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+		public void Configure(IApplicationBuilder app)
 		{
-			if (env.IsDevelopment())
-			{
+			if (Environment.IsDevelopment())
 				app.UseDeveloperExceptionPage();
-			}
 
 			app.UseHttpsRedirection();
 

@@ -8,7 +8,7 @@ namespace Examples.EFCore.Complete
 	public interface IContext
 	{
 		/// <inheritdoc cref="Context.Users"/>
-		DbSet<Models.User> Users { get; }
+		DbSet<Data.User> Users { get; }
 
 		/// <inheritdoc cref="DbContext.SaveChangesAsync(CancellationToken)"/>
 		Task<int> SaveChangesAsync(CancellationToken cancellationToken);
