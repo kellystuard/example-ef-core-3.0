@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -43,27 +45,32 @@ namespace Examples.EFCore.Complete
 
 			var context = services.GetRequiredService<Context>();
 			context.Database.Migrate();
+			var anyChanges = false;
 
 			if (await context.Users.AnyAsync() == false)
-				context.Users.AddRange(
-					new Data.User() { FirstName = "Sterling", LastName = "Archer", },
-					new Data.User() { FirstName = "Cheryl", LastName = "Tunt", },
-					new Data.User() { FirstName = "Pam", LastName = "Poovey", },
-					new Data.User() { FirstName = "Cyril", LastName = "Figgis", },
-					new Data.User() { FirstName = "Lana", LastName = "Kane", },
-					new Data.User() { FirstName = "Malory", LastName = "Archer", },
-					new Data.User() { FirstName = "Ray", LastName = "Gillette", },
-					new Data.User() { FirstName = "Doctor", LastName = "Kreiger", },
-					new Data.User() { FirstName = "Barry", LastName = "Dillon", },
-					new Data.User() { FirstName = "Other Barry", LastName = "Dillon", },
-					new Data.User() { FirstName = "Len", LastName = "Drexler", },
-					new Data.User() { FirstName = "Ron", LastName = "Cadillac", },
-					new Data.User() { FirstName = "Brett", LastName = "Buckley", },
-					new Data.User() { FirstName = "Katya", LastName = "Kazanova", },
-					new Data.User() { FirstName = "Gustavo", LastName = "Calderon", }
-				);
+			{
+				anyChanges = true;
 
-			await context.SaveChangesAsync();
+				// pulling random users
+				using var client = new System.Net.Http.HttpClient();
+				var resultStream = await client.GetStreamAsync(new System.Uri("https://randomuser.me/api/?results=100&inc=name,email&nat=us"));
+				var jsonUsers = await System.Text.Json.JsonDocument.ParseAsync(resultStream);
+
+				var users =
+					from user in jsonUsers.RootElement.GetProperty("results").EnumerateArray()
+					let name = user.GetProperty("name")
+					select new Data.User()
+					{
+						FirstName = name.GetProperty("first").GetString(),
+						LastName = name.GetProperty("last").GetString(),
+						Email = user.GetProperty("email").GetString(),
+					};
+
+				context.Users.AddRange(users);
+			}
+
+			if (anyChanges)
+				await context.SaveChangesAsync();
 		}
 	}
 }

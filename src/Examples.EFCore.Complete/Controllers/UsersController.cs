@@ -24,7 +24,7 @@ namespace Examples.EFCore.Complete.Controllers
 	{
 		private readonly ILogger _logger;
 		private readonly IMapper _mapper;
-		private readonly Context _context;
+		private readonly IContext _context;
 
 		/// <summary>
 		/// Creates a new UsersController.
@@ -32,7 +32,7 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <param name="logger">Represents a type used to perform logging.</param>
 		/// <param name="mapper">Represents a types used to copy property values from one object type to another.</param>
 		/// <param name="context">Represents a session with the database and can be used to query and save instances of your entities.</param>
-		public UsersController(ILogger<UsersController> logger, IMapper mapper, Context context)
+		public UsersController(ILogger<UsersController> logger, IMapper mapper, IContext context)
 		{
 			_logger = logger;
 			_mapper = mapper;
@@ -47,12 +47,13 @@ namespace Examples.EFCore.Complete.Controllers
 		/// <param name="orderBy">Controls the sort-order for users.</param>
 		/// <param name="firstName">Filters users to those that starts with this first name.</param>
 		/// <param name="lastName">Filters users to those that starts with this last name.</param>
+		/// <param name="email">Filters users to those that starts with this email.</param>
 		/// <returns>Page of users.</returns>
 		[HttpGet, Transactional(IsolationLevel.ReadCommitted)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		public async Task<Models.Page<Models.User>> ReadAll([FromQuery]Models.PageQuery page, CancellationToken cancellationToken,
-			Models.User.Sort orderBy = Models.User.Sort.Default, string? firstName = null, string? lastName = null)
+			Models.User.Sort orderBy = Models.User.Sort.Default, string? firstName = null, string? lastName = null, string? email = null)
 		{
 			page ??= new Models.PageQuery();
 
@@ -64,6 +65,7 @@ namespace Examples.EFCore.Complete.Controllers
 				Models.User.Sort.Id => query.OrderBy(u => u.Id),
 				Models.User.Sort.FirstName => query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
 				Models.User.Sort.LastName => query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName),
+				Models.User.Sort.Email => query.OrderBy(u => u.Email).ThenBy(u => u.LastName).ThenBy(u => u.FirstName),
 				_ => throw new ArgumentOutOfRangeException(nameof(orderBy), orderBy, null),
 			};
 
