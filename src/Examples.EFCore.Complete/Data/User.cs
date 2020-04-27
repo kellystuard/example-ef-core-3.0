@@ -1,4 +1,6 @@
-﻿namespace Examples.EFCore.Complete.Data
+﻿using System.Collections.Generic;
+
+namespace Examples.EFCore.Complete.Data
 {
 	/// <summary>
 	/// User in the database.
@@ -20,5 +22,8 @@
 		/// <summary>If the user should be shown in the results.</summary>
 		/// <remarks>Users that are not visible should never be returned out of the service.</remarks>
 		public bool Visible { get; set; } = true;
+
+		/// <summary>User's list of logins.</summary>
+		public List<UserLogin> Logins { get; } = new List<UserLogin>();
 	}
 }

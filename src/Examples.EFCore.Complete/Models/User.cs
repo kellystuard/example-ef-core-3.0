@@ -22,6 +22,10 @@ namespace Examples.EFCore.Complete.Models
 		[Required, Display(ShortName = "email", Name = "Email")]
 		public string Email { get; set; } = null!;
 
+		/// <summary>Number of times the user has logged in.</summary>
+		[Display(ShortName = "loginCount", Name = "Login Count")]
+		public int LoginCount { get; set; }
+
 		/// <summary>
 		/// Controls the sort-order for users.
 		/// </summary>

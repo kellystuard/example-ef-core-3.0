@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,6 +14,9 @@ namespace Examples.EFCore.Complete
 	/// </summary>
 	public sealed class Program
 	{
+		/// <summary>Makes data population deterministic.</summary>
+		public const int Seed = 525_600;
+
 		/// <summary>
 		/// Starting method of the application.
 		/// </summary>
@@ -53,10 +57,10 @@ namespace Examples.EFCore.Complete
 
 				// pulling random users
 				using var client = new System.Net.Http.HttpClient();
-				var resultStream = await client.GetStreamAsync(new System.Uri("https://randomuser.me/api/?results=100&inc=name,email&nat=us"));
+				var resultStream = await client.GetStreamAsync(new System.Uri($"https://randomuser.me/api/?results=100&inc=name,email&nat=us&seed={Seed}"));
 				var jsonUsers = await System.Text.Json.JsonDocument.ParseAsync(resultStream);
 
-				var users =
+				var users = (
 					from user in jsonUsers.RootElement.GetProperty("results").EnumerateArray()
 					let name = user.GetProperty("name")
 					select new Data.User()
@@ -64,7 +68,28 @@ namespace Examples.EFCore.Complete
 						FirstName = name.GetProperty("first").GetString(),
 						LastName = name.GetProperty("last").GetString(),
 						Email = user.GetProperty("email").GetString(),
-					};
+					}
+				).ToArray();
+
+				var random = new Random(Seed);
+				var now = DateTime.UtcNow;
+				var maxMinutes = TimeSpan.FromDays(365).TotalMinutes;
+
+				foreach (var user in users)
+				{
+					var lnow = now;
+					var logins = new Data.UserLogin[random.Next(100)];
+					for (int i = 0; i < logins.Length; i++)
+					{
+						lnow -= TimeSpan.FromMinutes(maxMinutes);
+						logins[i] = new Data.UserLogin()
+						{
+							Successful = random.Next(0, 1) == 1,
+							Timestamp = lnow,
+						};
+					}
+					user.Logins.AddRange(logins.Reverse());
+				}
 
 				context.Users.AddRange(users);
 			}

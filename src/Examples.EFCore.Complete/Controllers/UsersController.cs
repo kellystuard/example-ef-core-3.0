@@ -73,6 +73,8 @@ namespace Examples.EFCore.Complete.Controllers
 				query = query.Where(u => u.FirstName.StartsWith(firstName));
 			if (lastName != null)
 				query = query.Where(u => u.LastName.StartsWith(lastName));
+			if (email != null)
+				query = query.Where(u => u.Email.StartsWith(email));
 
 			var users = page.Limit == 0 ?
 				Enumerable.Empty<Models.User>() :

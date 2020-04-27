@@ -9,6 +9,7 @@ namespace Examples.EFCore.DIY
 		{
 		}
 
-		public DbSet<Models.User> Users { get; set; }
+		public DbSet<Data.User> Users { get; set; }
+		public DbSet<Data.UserLogin> UserLogins { get; set; }
 	}
 }

@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
 
-namespace Examples.EFCore.DIY.Models
+namespace Examples.EFCore.DIY.Data
 {
 	public sealed class User
 	{
@@ -12,6 +12,8 @@ namespace Examples.EFCore.DIY.Models
 
 		public string Email { get; set; } = null!;
 
-		public int LoginCount { get; set; }
+		public bool Visible { get; set; } = true;
+
+		public List<UserLogin> Logins { get; } = new List<UserLogin>();
 	}
 }

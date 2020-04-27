@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Linq;
+using AutoMapper;
 
 namespace Examples.EFCore.Complete
 {
@@ -12,9 +13,10 @@ namespace Examples.EFCore.Complete
 		/// </summary>
 		public AutoMapping()
 		{
-			CreateMap<Models.User, Data.User>()
-				.ReverseMap();
+			CreateMap<Models.User, Data.User>();
 			CreateMap<Models.UserEdit, Data.User>();
+			CreateMap<Data.User, Models.User>()
+				.ForMember(m => m.LoginCount, opt => opt.MapFrom(d => d.Logins.Count));
 		}
 	}
 }
