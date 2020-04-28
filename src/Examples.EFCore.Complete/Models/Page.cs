@@ -16,22 +16,30 @@ namespace Examples.EFCore.Complete.Models
 		/// <param name="totalCount">Total count of the full list.</param>
 		/// <param name="limit">How many results, maximum, were requested for the current page.</param>
 		/// <param name="offset">Zero-based offset, from the beginning of the list, of the current page.</param>
-		public Page(IEnumerable<T> results, int totalCount, int limit, int offset)
+		/// <param name="orderBy">Sorting order of results.</param>
+		public Page(IEnumerable<T> results, int totalCount, int limit, int offset, string orderBy)
 		{
 			Results = results;
 			TotalCount = totalCount;
 			Limit = limit;
 			Offset = offset;
+			OrderBy = orderBy;
 		}
 
 		/// <summary>Current page list.</summary>
 		public IEnumerable<T> Results { get; }
+
 		/// <summary>Total count of the full list.</summary>
 		public int TotalCount { get; }
+
 		/// <summary>How many results, maximum, were requested for the current page.</summary>
 		public int Limit { get; }
+
 		/// <summary>Zero-based offset, from the beginning of the list, of the current page.</summary>
 		public int Offset { get; }
+
+		/// <summary>Sorting order of results.</summary>
+		public string OrderBy { get; }
 
 		#region Equality methods and operators
 
@@ -73,6 +81,6 @@ namespace Examples.EFCore.Complete.Models
 				&& TotalCount == other.TotalCount;
 		}
 
-		#endregion
+		#endregion Equality methods and operators
 	}
 }

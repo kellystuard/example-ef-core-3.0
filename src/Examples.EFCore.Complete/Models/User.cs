@@ -31,9 +31,6 @@ namespace Examples.EFCore.Complete.Models
 		/// </summary>
 		public enum Sort
 		{
-			/// <summary>Sorts by last name then first name.</summary>
-			Default = 0,
-
 			/// <summary>Sorts by database identifier.</summary>
 			Id,
 

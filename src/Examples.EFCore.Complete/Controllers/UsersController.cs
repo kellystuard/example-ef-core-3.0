@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Transactions;
+using System.Data;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
@@ -53,7 +53,7 @@ namespace Examples.EFCore.Complete.Controllers
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		public async Task<Models.Page<Models.User>> ReadAll([FromQuery]Models.PageQuery page, CancellationToken cancellationToken,
-			Models.User.Sort orderBy = Models.User.Sort.Default, string? firstName = null, string? lastName = null, string? email = null)
+			Models.User.Sort orderBy = Models.User.Sort.LastName, string? firstName = null, string? lastName = null, string? email = null)
 		{
 			page ??= new Models.PageQuery();
 
@@ -61,7 +61,6 @@ namespace Examples.EFCore.Complete.Controllers
 
 			query = orderBy switch
 			{
-				Models.User.Sort.Default => query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName),
 				Models.User.Sort.Id => query.OrderBy(u => u.Id),
 				Models.User.Sort.FirstName => query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
 				Models.User.Sort.LastName => query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName),
@@ -85,7 +84,7 @@ namespace Examples.EFCore.Complete.Controllers
 					.ToArrayAsync(cancellationToken);
 			var totalCount = await query.CountAsync(cancellationToken);
 
-			return new Models.Page<Models.User>(users, totalCount, page.Limit, page.Offset);
+			return new Models.Page<Models.User>(users, totalCount, page.Limit, page.Offset, orderBy.ToString());
 		}
 
 		/// <summary>
