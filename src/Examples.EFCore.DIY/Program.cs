@@ -54,7 +54,7 @@ namespace Examples.EFCore.DIY
 
 				// pulling random users
 				using var client = new System.Net.Http.HttpClient();
-				var resultStream = await client.GetStreamAsync(new Uri($"https://randomuser.me/api/?results=100&inc=name,email&nat=us&seed={Seed}"));
+				var resultStream = await client.GetStreamAsync(new Uri($"https://randomuser.me/api/?results=100&inc=name,email&nat=us&seed={maxMinutes}"));
 				var jsonUsers = await System.Text.Json.JsonDocument.ParseAsync(resultStream);
 
 				var users = (
