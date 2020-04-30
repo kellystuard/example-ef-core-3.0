@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -14,9 +13,6 @@ namespace Examples.EFCore.Complete
 	/// </summary>
 	public sealed class Program
 	{
-		/// <summary>Makes data population deterministic.</summary>
-		public const int Seed = 525_600;
-
 		/// <summary>
 		/// Starting method of the application.
 		/// </summary>
@@ -48,16 +44,19 @@ namespace Examples.EFCore.Complete
 			var services = scope.ServiceProvider;
 
 			var context = services.GetRequiredService<Context>();
-			context.Database.Migrate();
+			await context.Database.MigrateAsync();
 			var anyChanges = false;
 
 			if (await context.Users.AnyAsync() == false)
 			{
 				anyChanges = true;
 
+				var minMinutes = (int)TimeSpan.FromDays(1).TotalMinutes;
+				var maxMinutes = (int)TimeSpan.FromDays(365).TotalMinutes;
+
 				// pulling random users
 				using var client = new System.Net.Http.HttpClient();
-				var resultStream = await client.GetStreamAsync(new System.Uri($"https://randomuser.me/api/?results=100&inc=name,email&nat=us&seed={Seed}"));
+				var resultStream = await client.GetStreamAsync(new Uri($"https://randomuser.me/api/?results=100&inc=name,email&nat=us&seed={maxMinutes}"));
 				var jsonUsers = await System.Text.Json.JsonDocument.ParseAsync(resultStream);
 
 				var users = (
@@ -71,17 +70,18 @@ namespace Examples.EFCore.Complete
 					}
 				).ToArray();
 
-				var random = new Random(Seed);
+				var random = new Random(maxMinutes);
 				var now = DateTime.UtcNow;
-				var maxMinutes = TimeSpan.FromDays(365).TotalMinutes;
 
+				// setup each random user with between 0 and 99 historic logins
 				foreach (var user in users)
 				{
 					var lnow = now;
 					var logins = new Data.UserLogin[random.Next(100)];
+					// with each login between 1 day and 1 year ago
 					for (int i = 0; i < logins.Length; i++)
 					{
-						lnow -= TimeSpan.FromMinutes(maxMinutes);
+						lnow -= TimeSpan.FromMinutes(random.Next(minMinutes, maxMinutes));
 						logins[i] = new Data.UserLogin()
 						{
 							Successful = random.Next(0, 1) == 1,
