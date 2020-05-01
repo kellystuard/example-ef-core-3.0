@@ -79,15 +79,16 @@ namespace Examples.EFCore.Complete
 		}
 
 		/// <summary>
-		///
+		/// Converts 100 users from randomuser.me in to <see cref="Data.User"/>s.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>100 users from randomuser.me.</returns>
 		public static async Task<IEnumerable<Data.User>> Get100RandomUsers()
 		{
 			var minMinutes = (int)TimeSpan.FromDays(1).TotalMinutes;
 			var maxMinutes = (int)TimeSpan.FromDays(365).TotalMinutes;
 
 			// pulling random users
+			// using the same seed gives the same results every time
 			using var client = new System.Net.Http.HttpClient();
 			var resultStream = await client.GetStreamAsync(new Uri($"https://randomuser.me/api/?results=100&inc=name,email&nat=us&seed={maxMinutes}"));
 			var jsonUsers = await System.Text.Json.JsonDocument.ParseAsync(resultStream);
@@ -103,6 +104,7 @@ namespace Examples.EFCore.Complete
 				}
 			).ToArray();
 
+			// using the same seed gives the same results every time
 			var random = new Random(maxMinutes);
 			var now = DateTime.UtcNow;
 
