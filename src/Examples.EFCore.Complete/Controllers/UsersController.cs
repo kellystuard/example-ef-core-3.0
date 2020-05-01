@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Data;
@@ -44,7 +45,6 @@ namespace Examples.EFCore.Complete.Controllers
 		/// </summary>
 		/// <param name="page">Parameters passed to control paging of the results.</param>
 		/// <param name="cancellationToken">Injected by MVC and signaled if the current request is canceled.</param>
-		/// <param name="orderBy">Controls the sort-order for users.</param>
 		/// <param name="firstName">Filters users to those that starts with this first name.</param>
 		/// <param name="lastName">Filters users to those that starts with this last name.</param>
 		/// <param name="email">Filters users to those that starts with this email.</param>
@@ -53,21 +53,17 @@ namespace Examples.EFCore.Complete.Controllers
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		public async Task<Models.Page<Models.User>> ReadAll([FromQuery]Models.PageQuery page, CancellationToken cancellationToken,
-			Models.User.Sort orderBy = Models.User.Sort.LastName, string? firstName = null, string? lastName = null, string? email = null)
+			string? firstName = null, string? lastName = null, string? email = null)
 		{
 			page ??= new Models.PageQuery();
+			page.OrderBy ??= $"{nameof(Models.User.LastName)},{nameof(Models.User.FirstName)}";
 
 			var query = _context.Users.AsNoTracking();
 
-			query = orderBy switch
-			{
-				Models.User.Sort.Id => query.OrderBy(u => u.Id),
-				Models.User.Sort.FirstName => query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
-				Models.User.Sort.LastName => query.OrderBy(u => u.LastName).ThenBy(u => u.FirstName),
-				Models.User.Sort.Email => query.OrderBy(u => u.Email).ThenBy(u => u.LastName).ThenBy(u => u.FirstName),
-				_ => throw new ArgumentOutOfRangeException(nameof(orderBy), orderBy, null),
-			};
+			// sort
+			query = query.OrderBy(page.OrderBy).ThenBy(u => u.Id);
 
+			// filter
 			if (firstName != null)
 				query = query.Where(u => u.FirstName.StartsWith(firstName));
 			if (lastName != null)
@@ -75,6 +71,7 @@ namespace Examples.EFCore.Complete.Controllers
 			if (email != null)
 				query = query.Where(u => u.Email.StartsWith(email));
 
+			// page and map
 			var users = page.Limit == 0 ?
 				Enumerable.Empty<Models.User>() :
 				await query
@@ -82,9 +79,11 @@ namespace Examples.EFCore.Complete.Controllers
 					.Take(page.Limit)
 					.ProjectTo<Models.User>(_mapper.ConfigurationProvider)
 					.ToArrayAsync(cancellationToken);
+
+			// count is done from query without page and map
 			var totalCount = await query.CountAsync(cancellationToken);
 
-			return new Models.Page<Models.User>(users, totalCount, page.Limit, page.Offset, orderBy.ToString());
+			return new Models.Page<Models.User>(users, totalCount, page.Limit, page.Offset, page.OrderBy);
 		}
 
 		/// <summary>

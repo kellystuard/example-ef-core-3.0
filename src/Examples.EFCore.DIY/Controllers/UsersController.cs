@@ -5,6 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+// start with:
+// bad EF
+// ActionResult<T> (swagger)
+
+// force client-side exception
+// .Where(u => u.password = GetPassword(foo));
+// .Where(u => u.password = Expression<Func<bool>
+
 namespace Examples.EFCore.DIY.Controllers
 {
 	// conforms to the following REST specifications: https://restfulapi.net/http-methods/

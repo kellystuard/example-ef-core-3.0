@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -11,7 +12,7 @@ namespace Examples.EFCore.Complete
 	/// <summary>
 	/// Starting class of the application.
 	/// </summary>
-	public sealed class Program
+	public static class Program
 	{
 		/// <summary>
 		/// Starting method of the application.
@@ -22,7 +23,13 @@ namespace Examples.EFCore.Complete
 			System.Diagnostics.Activity.DefaultIdFormat = System.Diagnostics.ActivityIdFormat.W3C;
 
 			var host = CreateHostBuilder(args).Build();
-			await CreateAndPopulateDbIfNotExists(host);
+			using var scope = host.Services.CreateScope();
+			var services = scope.ServiceProvider;
+
+			var context = services.GetRequiredService<Context>();
+			await CreateDbIfNotExists(context);
+			await PopulateDbIfEmpty(context, Get100RandomUsers);
+
 			await host.RunAsync();
 		}
 
@@ -38,64 +45,86 @@ namespace Examples.EFCore.Complete
 					webBuilder.UseStartup<Startup>();
 				});
 
-		private static async Task CreateAndPopulateDbIfNotExists(IHost host)
+		/// <summary>
+		/// Creates the database and runs migrations, if it does not already exist.
+		/// </summary>
+		/// <param name="context">A DbContext instance represents a session with the database and can be used to query and save instances of your entities.</param>
+		/// <returns></returns>
+		public static async Task CreateDbIfNotExists(Context context)
 		{
-			using var scope = host.Services.CreateScope();
-			var services = scope.ServiceProvider;
+			if (context == null)
+				throw new ArgumentNullException(nameof(context));
 
-			var context = services.GetRequiredService<Context>();
 			await context.Database.MigrateAsync();
-			var anyChanges = false;
+		}
+
+		/// <summary>
+		/// Populates the database, if the tables are empty.
+		/// </summary>
+		/// <param name="context">A DbContext instance represents a session with the database and can be used to query and save instances of your entities.</param>
+		/// <param name="users">Function that, when executed, returns the users to load.</param>
+		/// <returns></returns>
+		public static async Task PopulateDbIfEmpty(Context context, Func<Task<IEnumerable<Data.User>>> users)
+		{
+			if (context == null)
+				throw new ArgumentNullException(nameof(context));
+			if (users == null)
+				throw new ArgumentNullException(nameof(users));
 
 			if (await context.Users.AnyAsync() == false)
 			{
-				anyChanges = true;
+				context.Users.AddRange(await users());
+				await context.SaveChangesAsync();
+			}
+		}
 
-				var minMinutes = (int)TimeSpan.FromDays(1).TotalMinutes;
-				var maxMinutes = (int)TimeSpan.FromDays(365).TotalMinutes;
+		/// <summary>
+		///
+		/// </summary>
+		/// <returns></returns>
+		public static async Task<IEnumerable<Data.User>> Get100RandomUsers()
+		{
+			var minMinutes = (int)TimeSpan.FromDays(1).TotalMinutes;
+			var maxMinutes = (int)TimeSpan.FromDays(365).TotalMinutes;
 
-				// pulling random users
-				using var client = new System.Net.Http.HttpClient();
-				var resultStream = await client.GetStreamAsync(new Uri($"https://randomuser.me/api/?results=100&inc=name,email&nat=us&seed={maxMinutes}"));
-				var jsonUsers = await System.Text.Json.JsonDocument.ParseAsync(resultStream);
+			// pulling random users
+			using var client = new System.Net.Http.HttpClient();
+			var resultStream = await client.GetStreamAsync(new Uri($"https://randomuser.me/api/?results=100&inc=name,email&nat=us&seed={maxMinutes}"));
+			var jsonUsers = await System.Text.Json.JsonDocument.ParseAsync(resultStream);
 
-				var users = (
-					from user in jsonUsers.RootElement.GetProperty("results").EnumerateArray()
-					let name = user.GetProperty("name")
-					select new Data.User()
-					{
-						FirstName = name.GetProperty("first").GetString(),
-						LastName = name.GetProperty("last").GetString(),
-						Email = user.GetProperty("email").GetString(),
-					}
-				).ToArray();
-
-				var random = new Random(maxMinutes);
-				var now = DateTime.UtcNow;
-
-				// setup each random user with between 0 and 99 historic logins
-				foreach (var user in users)
+			var users = (
+				from user in jsonUsers.RootElement.GetProperty("results").EnumerateArray()
+				let name = user.GetProperty("name")
+				select new Data.User()
 				{
-					var lnow = now;
-					var logins = new Data.UserLogin[random.Next(100)];
-					// with each login between 1 day and 1 year ago
-					for (int i = 0; i < logins.Length; i++)
-					{
-						lnow -= TimeSpan.FromMinutes(random.Next(minMinutes, maxMinutes));
-						logins[i] = new Data.UserLogin()
-						{
-							Successful = random.Next(0, 1) == 1,
-							Timestamp = lnow,
-						};
-					}
-					user.Logins.AddRange(logins.Reverse());
+					FirstName = name.GetProperty("first").GetString(),
+					LastName = name.GetProperty("last").GetString(),
+					Email = user.GetProperty("email").GetString(),
 				}
+			).ToArray();
 
-				context.Users.AddRange(users);
+			var random = new Random(maxMinutes);
+			var now = DateTime.UtcNow;
+
+			// setup each random user with between 0 and 99 historic logins
+			foreach (var user in users)
+			{
+				var lnow = now;
+				var logins = new Data.UserLogin[random.Next(100)];
+				// with each login between 1 day and 1 year ago
+				for (int i = 0; i < logins.Length; i++)
+				{
+					lnow -= TimeSpan.FromMinutes(random.Next(minMinutes, maxMinutes));
+					logins[i] = new Data.UserLogin()
+					{
+						Successful = random.Next(0, 1) == 1,
+						Timestamp = lnow,
+					};
+				}
+				user.Logins.AddRange(logins.Reverse());
 			}
 
-			if (anyChanges)
-				await context.SaveChangesAsync();
+			return users;
 		}
 	}
 }

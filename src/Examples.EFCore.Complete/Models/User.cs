@@ -25,23 +25,5 @@ namespace Examples.EFCore.Complete.Models
 		/// <summary>Number of times the user has logged in.</summary>
 		[Display(ShortName = "loginCount", Name = "Login Count")]
 		public int LoginCount { get; set; }
-
-		/// <summary>
-		/// Controls the sort-order for users.
-		/// </summary>
-		public enum Sort
-		{
-			/// <summary>Sorts by database identifier.</summary>
-			Id,
-
-			/// <summary>Sorts by first name then last name.</summary>
-			FirstName,
-
-			/// <summary>Sorts by last name then first name.</summary>
-			LastName,
-
-			/// <summary>Sorts by email, last name, then first name.</summary>
-			Email,
-		}
 	}
 }
