@@ -8,22 +8,22 @@ namespace Examples.EFCore.Complete.Models
 	public sealed class User
 	{
 		/// <summary>User's API identifier.</summary>
-		public int Id { get; set; }
+		public int? Id { get; set; }
 
 		/// <summary>User's first name.</summary>
 		[Required, Display(ShortName = "firstName", Name = "First Name")]
-		public string FirstName { get; set; } = null!;
+		public string? FirstName { get; set; }
 
 		/// <summary>User's last name.</summary>
 		[Required, Display(ShortName = "lastName", Name = "Last Name")]
-		public string LastName { get; set; } = null!;
+		public string? LastName { get; set; }
 
 		/// <summary>User's last name.</summary>
 		[Required, Display(ShortName = "email", Name = "Email")]
-		public string Email { get; set; } = null!;
+		public string? Email { get; set; }
 
 		/// <summary>Number of times the user has logged in.</summary>
 		[Display(ShortName = "loginCount", Name = "Login Count")]
-		public int LoginCount { get; set; }
+		public int? LoginCount { get; set; }
 	}
 }

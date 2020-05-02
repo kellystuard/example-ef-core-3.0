@@ -1,13 +1,17 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
@@ -31,6 +35,7 @@ namespace Examples.EFCore.Complete
 
 		/// <summary>Represents a set of key/value application configuration properties.</summary>
 		public IConfiguration Configuration { get; }
+
 		/// <summary>Provides information about the web hosting environment an application is running in.</summary>
 		public IWebHostEnvironment Environment { get; }
 
@@ -51,6 +56,7 @@ namespace Examples.EFCore.Complete
 				.AddJsonOptions(options =>
 				{
 					options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+					options.JsonSerializerOptions.IgnoreNullValues = true;
 				});
 
 			services.AddScoped<IContext, Context>();
@@ -65,8 +71,12 @@ namespace Examples.EFCore.Complete
 				c.IncludeXmlComments(xmlPath);
 			});
 			services.AddAutoMapper(typeof(Startup));
+			services.AddHealthChecks()
+				.AddSqlServer(Configuration.GetConnectionString("Database"))
+				.AddDiskStorageHealthCheck(options => options.AddDrive("C:\\", 1000), "Disk low available storage - Degraded", HealthStatus.Degraded)
+				.AddDiskStorageHealthCheck(options => options.AddDrive("C:\\", 100), "Disk low available storage - Unhealthy", HealthStatus.Unhealthy)
+			;
 		}
-
 
 		/// <summary>
 		/// Configures the application, during application startup.
@@ -75,9 +85,9 @@ namespace Examples.EFCore.Complete
 		public void Configure(IApplicationBuilder app)
 		{
 			if (Environment.IsDevelopment())
+			{
 				app.UseDeveloperExceptionPage();
-
-			app.UseHttpsRedirection();
+			}
 
 			app.UseSwagger();
 			app.UseSwaggerUI(c =>
@@ -92,16 +102,50 @@ namespace Examples.EFCore.Complete
 			app.UseEndpoints(endpoints =>
 			{
 				endpoints.MapControllers();
+				endpoints.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+				{
+					ResponseWriter = WriteResponse,
+				});
 			});
 		}
 
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812", Justification = "Used in DI registrations to allow for lazy resolving of dependencies.")]
-		internal sealed class ServiceLazy<T> : Lazy<T> where T : class
+		private static Task WriteResponse(HttpContext context, HealthReport result)
 		{
-			public ServiceLazy(IServiceProvider provider)
-				: base(() => provider.GetRequiredService<T>())
+			context.Response.ContentType = "application/json; charset=utf-8";
+
+			using var writer = new Utf8JsonWriter(context.Response.BodyWriter);
+			writer.WriteStartObject();
+			writer.WriteString("status", result.Status.ToString());
+			writer.WriteStartObject("results");
+			foreach (var entry in result.Entries)
 			{
+				writer.WriteStartObject(entry.Key);
+				writer.WriteString("status", entry.Value.Status.ToString());
+				writer.WriteString("description", entry.Value.Description);
+				writer.WriteStartObject("data");
+				foreach (var item in entry.Value.Data)
+				{
+					writer.WritePropertyName(item.Key);
+					JsonSerializer.Serialize(
+						writer, item.Value, item.Value?.GetType() ??
+						typeof(object));
+				}
+				writer.WriteEndObject();
+				writer.WriteEndObject();
 			}
+			writer.WriteEndObject();
+			writer.WriteEndObject();
+
+			return writer.FlushAsync();
+		}
+	}
+
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812", Justification = "Used in DI registrations to allow for lazy resolving of dependencies.")]
+	internal sealed class ServiceLazy<T> : Lazy<T> where T : class
+	{
+		public ServiceLazy(IServiceProvider provider)
+			: base(() => provider.GetRequiredService<T>())
+		{
 		}
 	}
 }

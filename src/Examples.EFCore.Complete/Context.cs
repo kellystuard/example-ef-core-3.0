@@ -1,15 +1,19 @@
 using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Examples.EFCore.Complete
 {
 	/// <inheritdoc/>
 	public sealed class Context : DbContext, IContext
 	{
+		private readonly IConfiguration _configuration;
+
 		/// <inheritdoc/>
-		public Context(DbContextOptions<Context> options)
+		public Context(DbContextOptions<Context> options, IConfiguration configuration)
 			: base(options)
 		{
+			_configuration = configuration;
 		}
 
 		/// <inheritdoc/>
@@ -18,7 +22,8 @@ namespace Examples.EFCore.Complete
 			if (modelBuilder == null)
 				throw new ArgumentNullException(nameof(modelBuilder));
 
-			modelBuilder.Entity<Data.User>().HasQueryFilter(u => u.Visible);
+			if (_configuration.GetValue("showInvisibleUsers", false) == false)
+				modelBuilder.Entity<Data.User>().HasQueryFilter(u => u.Visible);
 		}
 
 		/// <summary>

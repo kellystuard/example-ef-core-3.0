@@ -12,22 +12,22 @@ namespace Examples.EFCore.Complete.Models
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
+		/// <param name="query">Allows for representing a requested paged list.</param>
 		/// <param name="results">Current page list.</param>
-		/// <param name="totalCount">Total count of the full list.</param>
-		/// <param name="limit">How many results, maximum, were requested for the current page.</param>
-		/// <param name="offset">Zero-based offset, from the beginning of the list, of the current page.</param>
-		/// <param name="orderBy">Sorting order of results.</param>
-		public Page(IEnumerable<T> results, int totalCount, int limit, int offset, string orderBy)
+		public Page(PageQuery query, IReadOnlyCollection<T>? results)
 		{
-			Results = results;
-			TotalCount = totalCount;
-			Limit = limit;
-			Offset = offset;
-			OrderBy = orderBy;
+			if (query == null)
+				throw new ArgumentNullException(nameof(query));
+
+			Results = results ?? Array.Empty<T>();
+			TotalCount = Results.Count;
+			Limit = query.Limit;
+			Offset = query.Offset;
+			OrderBy = query.OrderBy;
 		}
 
 		/// <summary>Current page list.</summary>
-		public IEnumerable<T> Results { get; }
+		public IReadOnlyCollection<T> Results { get; }
 
 		/// <summary>Total count of the full list.</summary>
 		public int TotalCount { get; }
@@ -39,7 +39,7 @@ namespace Examples.EFCore.Complete.Models
 		public int Offset { get; }
 
 		/// <summary>Sorting order of results.</summary>
-		public string OrderBy { get; }
+		public string? OrderBy { get; }
 
 		#region Equality methods and operators
 

@@ -17,8 +17,12 @@ namespace Examples.EFCore.Complete.Models
 		[DefaultValue(0), Range(0, 5_000)]
 		public int Offset { get; set; } = 0;
 
-		/// <summary>Sorting order of results.</summary>
-		[DefaultValue("")]
+		/// <summary>Sorting order of results. Default order, if not specified.</summary>
+		[DefaultValue(null), RegularExpression(@"\w+(?:,\w+)*", ErrorMessage = "Expected format either 'fieldName' or 'fieldName1,fieldName2,...'")]
 		public string? OrderBy { get; set; }
+
+		/// <summary>What fields to include in the results. All fields, if not specified.</summary>
+		[DefaultValue(null), RegularExpression(@"\w+(?:,\w+)*", ErrorMessage = "Expected format either 'fieldName' or 'fieldName1,fieldName2,...'")]
+		public string? Fields { get; set; }
 	}
 }

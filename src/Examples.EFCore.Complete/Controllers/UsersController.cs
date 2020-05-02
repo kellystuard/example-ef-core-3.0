@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace Examples.EFCore.Complete.Controllers
 {
@@ -52,7 +53,7 @@ namespace Examples.EFCore.Complete.Controllers
 		[HttpGet, Transactional(IsolationLevel.ReadCommitted)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		public async Task<Models.Page<Models.User>> ReadAll([FromQuery]Models.PageQuery page, CancellationToken cancellationToken,
+		public async Task<ActionResult<Models.Page<Models.User>>> ReadAll([FromQuery]Models.PageQuery page, CancellationToken cancellationToken,
 			string? firstName = null, string? lastName = null, string? email = null)
 		{
 			page ??= new Models.PageQuery();
@@ -65,25 +66,35 @@ namespace Examples.EFCore.Complete.Controllers
 
 			// filter
 			if (firstName != null)
-				query = query.Where(u => u.FirstName.StartsWith(firstName));
+				query = query.Where(u => u.FirstName.Contains(firstName));
 			if (lastName != null)
-				query = query.Where(u => u.LastName.StartsWith(lastName));
+				query = query.Where(u => u.LastName.Contains(lastName));
 			if (email != null)
-				query = query.Where(u => u.Email.StartsWith(email));
-
-			// page and map
-			var users = page.Limit == 0 ?
-				Enumerable.Empty<Models.User>() :
-				await query
-					.Skip(page.Offset)
-					.Take(page.Limit)
-					.ProjectTo<Models.User>(_mapper.ConfigurationProvider)
-					.ToArrayAsync(cancellationToken);
+				query = query.Where(u => u.Email.Contains(email));
 
 			// count is done from query without page and map
 			var totalCount = await query.CountAsync(cancellationToken);
 
-			return new Models.Page<Models.User>(users, totalCount, page.Limit, page.Offset, page.OrderBy);
+			// if no results are asked for, we can skip all the paging, mapping, and selecting
+			if (page.Limit == 0)
+				return new Models.Page<Models.User>(page, null);
+
+			// page
+			query = query
+				.Skip(page.Offset)
+				.Take(page.Limit);
+
+			// map
+			var modelQuery = query
+				.ProjectTo<Models.User>(_mapper.ConfigurationProvider);
+
+			// select
+			if (page.Fields != null)
+				modelQuery = modelQuery
+					.Select<Models.User>($"new {{ {page.Fields} }}");
+
+			var users = await modelQuery.ToArrayAsync(cancellationToken);
+			return new Models.Page<Models.User>(page, users);
 		}
 
 		/// <summary>
