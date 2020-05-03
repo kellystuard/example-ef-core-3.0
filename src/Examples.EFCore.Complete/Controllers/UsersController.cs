@@ -74,26 +74,29 @@ namespace Examples.EFCore.Complete.Controllers
 
 			// count is done from query without page and map
 			var totalCount = await query.CountAsync(cancellationToken);
+			Models.User[] users;
 
 			// if no results are asked for, we can skip all the paging, mapping, and selecting
 			if (page.Limit == 0)
-				return new Models.Page<Models.User>(page, null);
+				users = Array.Empty<Models.User>();
+			else
+			{
+				// page
+				query = query
+					.Skip(page.Offset)
+					.Take(page.Limit);
 
-			// page
-			query = query
-				.Skip(page.Offset)
-				.Take(page.Limit);
+				// map
+				var modelQuery = query
+					.ProjectTo<Models.User>(_mapper.ConfigurationProvider);
 
-			// map
-			var modelQuery = query
-				.ProjectTo<Models.User>(_mapper.ConfigurationProvider);
+				// select
+				if (page.Fields != null)
+					modelQuery = modelQuery
+						.Select<Models.User>($"new {{ {page.Fields} }}");
 
-			// select
-			if (page.Fields != null)
-				modelQuery = modelQuery
-					.Select<Models.User>($"new {{ {page.Fields} }}");
-
-			var users = await modelQuery.ToArrayAsync(cancellationToken);
+				users = await modelQuery.ToArrayAsync(cancellationToken);
+			}
 			return new Models.Page<Models.User>(page, users);
 		}
 
