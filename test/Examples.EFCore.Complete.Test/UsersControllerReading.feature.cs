@@ -116,7 +116,7 @@ this.ScenarioInitialize(scenarioInfo);
   testRunner.Then("the results should have 10 users", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
 #line 12
-   testRunner.And("the results should be ordered by \'LastName,FirstName\'", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
+   testRunner.And("the results should be ordered by LastName,FirstName", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
             }
             this.ScenarioCleanup();
@@ -164,7 +164,7 @@ this.ScenarioInitialize(scenarioInfo);
   testRunner.Then("the results should have 0 users", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
 #line 20
-   testRunner.And("the results should be ordered by \'LastName,FirstName\'", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
+   testRunner.And("the results should be ordered by LastName,FirstName", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
             }
             this.ScenarioCleanup();
@@ -212,7 +212,7 @@ this.ScenarioInitialize(scenarioInfo);
   testRunner.Then("the results should have 1 user", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
 #line 28
-   testRunner.And("the results should be ordered by \'LastName,FirstName\'", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
+   testRunner.And("the results should be ordered by LastName,FirstName", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
             }
             this.ScenarioCleanup();

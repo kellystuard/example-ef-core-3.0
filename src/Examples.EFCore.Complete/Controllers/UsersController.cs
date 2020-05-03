@@ -24,19 +24,16 @@ namespace Examples.EFCore.Complete.Controllers
 	[Route("[controller]")]
 	public sealed class UsersController : ControllerBase
 	{
-		private readonly ILogger _logger;
 		private readonly IMapper _mapper;
 		private readonly IContext _context;
 
 		/// <summary>
 		/// Creates a new UsersController.
 		/// </summary>
-		/// <param name="logger">Represents a type used to perform logging.</param>
 		/// <param name="mapper">Represents a types used to copy property values from one object type to another.</param>
 		/// <param name="context">Represents a session with the database and can be used to query and save instances of your entities.</param>
-		public UsersController(ILogger<UsersController> logger, IMapper mapper, IContext context)
+		public UsersController(IMapper mapper, IContext context)
 		{
-			_logger = logger;
 			_mapper = mapper;
 			_context = context;
 		}
@@ -53,7 +50,7 @@ namespace Examples.EFCore.Complete.Controllers
 		[HttpGet, Transactional(IsolationLevel.ReadCommitted)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<Models.Page<Models.User>>> ReadAll([FromQuery]Models.PageQuery page, CancellationToken cancellationToken,
+		public async Task<Models.Page<Models.User>> ReadAll([FromQuery]Models.PageQuery page, CancellationToken cancellationToken,
 			string? firstName = null, string? lastName = null, string? email = null)
 		{
 			page ??= new Models.PageQuery();
@@ -97,7 +94,7 @@ namespace Examples.EFCore.Complete.Controllers
 
 				users = await modelQuery.ToArrayAsync(cancellationToken);
 			}
-			return new Models.Page<Models.User>(page, users);
+			return new Models.Page<Models.User>(page, totalCount, users);
 		}
 
 		/// <summary>

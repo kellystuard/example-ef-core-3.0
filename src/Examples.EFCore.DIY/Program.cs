@@ -23,13 +23,14 @@ namespace Examples.EFCore.DIY
 			System.Diagnostics.Activity.DefaultIdFormat = System.Diagnostics.ActivityIdFormat.W3C;
 
 			var host = CreateHostBuilder(args).Build();
-			using var scope = host.Services.CreateScope();
-			var services = scope.ServiceProvider;
+			using (var scope = host.Services.CreateScope())
+			{
+				var services = scope.ServiceProvider;
 
-			var context = services.GetRequiredService<Context>();
-			await CreateDbIfNotExists(context);
-			await PopulateDbIfEmpty(context, Get100RandomUsers);
-
+				var context = services.GetRequiredService<Context>();
+				await CreateDbIfNotExists(context);
+				await PopulateDbIfEmpty(context, Get100RandomUsers);
+			}
 			await host.RunAsync();
 		}
 

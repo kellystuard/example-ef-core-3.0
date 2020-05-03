@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
@@ -23,14 +24,14 @@ namespace Examples.EFCore.Complete.Test
 
 		private UsersControllerReadingSteps()
 		{
+			var configuration = new ConfigurationBuilder().Build();
+
 			var services = new ServiceCollection();
+			services.AddSingleton<IConfiguration>(configuration);
 			services.AddDbContext<Context>(options => options
 				.UseInMemoryDatabase(nameof(UsersControllerReadingSteps))
 			);
 			services.AddScoped<IContext, Context>();
-			services.AddLogging(options => options
-				.SetMinimumLevel(LogLevel.None)
-			);
 			services.AddAutoMapper(typeof(Startup));
 			services.AddTransient<Controllers.UsersController>();
 
@@ -57,7 +58,7 @@ namespace Examples.EFCore.Complete.Test
 			_pageUser = await _usersController.ReadAll(null, CancellationToken.None);
 		}
 
-		[When(@"I read (.*) users?")]
+		[When(@"I read (-?\d*) users?")]
 		public async Task WhenIReadUser(int numberOf)
 		{
 			_pageUser = await _usersController.ReadAll(new Models.PageQuery
@@ -66,7 +67,7 @@ namespace Examples.EFCore.Complete.Test
 			}, CancellationToken.None);
 		}
 
-		[Then(@"the results should have (.*) users?")]
+		[Then(@"the results should have (-?\d*) users?")]
 		public async Task ThenTheResultShouldHaveUsers(int numberOf)
 		{
 			var context = _serviceProvider.GetRequiredService<Context>();
@@ -75,7 +76,7 @@ namespace Examples.EFCore.Complete.Test
 			Assert.AreEqual(await context.Users.CountAsync(), _pageUser.TotalCount);
 		}
 
-		[Then(@"the results should be ordered by '(.*)'")]
+		[Then(@"the results should be ordered by (.*)")]
 		public void ThenTheResultShouldBeOrderedBy(string orderBys)
 		{
 			var context = _serviceProvider.GetRequiredService<Context>();

@@ -13,14 +13,15 @@ namespace Examples.EFCore.Complete.Models
 		/// Creates a new instance.
 		/// </summary>
 		/// <param name="query">Allows for representing a requested paged list.</param>
+		/// <param name="totalCount">Total count of the full list.</param>
 		/// <param name="results">Current page list.</param>
-		public Page(PageQuery query, IReadOnlyCollection<T>? results)
+		public Page(PageQuery query, int totalCount, IReadOnlyCollection<T>? results)
 		{
 			if (query == null)
 				throw new ArgumentNullException(nameof(query));
 
 			Results = results ?? Array.Empty<T>();
-			TotalCount = Results.Count;
+			TotalCount = totalCount;
 			Limit = query.Limit;
 			Offset = query.Offset;
 			OrderBy = query.OrderBy;
