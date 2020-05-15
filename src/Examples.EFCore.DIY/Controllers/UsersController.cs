@@ -2,16 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-
-// start with:
-// bad EF
-// ActionResult<T> (swagger)
-
-// force client-side exception
-// .Where(u => u.password = GetPassword(foo));
-// .Where(u => u.password = Expression<Func<bool>
 
 namespace Examples.EFCore.DIY.Controllers
 {
